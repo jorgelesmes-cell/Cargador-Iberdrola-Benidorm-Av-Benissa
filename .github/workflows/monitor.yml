@@ -1,0 +1,42 @@
+name: monitor cargador Iberdrola Av. Benissa
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencias
+        run: pip install requests
+
+      - name: Recuperar estado anterior
+        uses: actions/cache@v4
+        with:
+          path: estado_anterior.txt
+          key: estado-cargador-benissa-${{ github.run_id }}
+          restore-keys: |
+            estado-cargador-benissa-
+
+      - name: Ejecutar monitor
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python monitor.py
+
+      - name: Guardar datos de Iberdrola
+        uses: actions/upload-artifact@v4
+        with:
+          name: datos-iberdrola-benissa
+          path: iberdrola.json
